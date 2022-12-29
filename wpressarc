@@ -127,8 +127,10 @@ class EntryHeader:
             return EntryHeader(path, name, int(size), int(mtime))
 
     @staticmethod
-    def from_tarinfo(tarinfo: tarfile.TarInfo):
+    def from_tarinfo(tarinfo: tarfile.TarInfo) -> EntryHeader | None:
         """Convert a TarInfo object to a header."""
+        if tarinfo.type != tarfile.REGTYPE: # Skip directories, etc.
+            return None
         path = os.path.dirname(tarinfo.name)
         if path == "":
             path = "."
@@ -181,7 +183,8 @@ def from_tar(stdin: io.IOBase, stdout: io.IOBase):
         archive = Archive(stdout)
         for tarinfo in tar:
             header = EntryHeader.from_tarinfo(tarinfo)
-            archive.write(header, tar.extractfile(tarinfo))
+            if header is not None: # Skip directories, etc.
+                archive.write(header, tar.extractfile(tarinfo))
 
 
 if __name__ == "__main__":
