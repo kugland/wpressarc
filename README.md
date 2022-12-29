@@ -67,5 +67,5 @@ directories (in fact, it does not even store the directory entries).
 
 ## License
 
-This script is licensed under the MIT license. See the LICENSE file
-for details.
+This script is licensed under the MIT license. See the
+[LICENSE](./LICENSE) file for details.
