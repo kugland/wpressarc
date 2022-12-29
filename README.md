@@ -1,6 +1,6 @@
 # wpressarc
 
-Convert ai1wm WordPress archives to and from tar archives.
+Convert ai1wm wpress archives to and from tar archives.
 
 ## Usage
 
@@ -10,44 +10,38 @@ wpressarc --from-tar|--to-tar
 
 ## Description
 
-The WordPress archive format is a simple format for storing files in a
+The wpress archive format is a simple format for storing files in a
 directory structure, used by the
 [All-in-One WP Migration plugin](https://wordpress.org/plugins/all-in-one-wp-migration/).
 
-This script converts between the WordPress archive format and the tar
+This script converts between the wpress archive format and the tar
 archive format. It is intended to be used as a filter, so it reads from
 standard input and writes to standard output.
 
 ## Examples
 
-For example, to convert a WordPress archive to a tar archive:
+For example, to convert a wpress archive to a tar archive:
 
-```
-wpressarc --from-tar < wordpress.tar > wordpress.wpress
-```
+For example, to convert a tar archive to a wpress archive:
 
-To convert a tar archive to a WordPress archive:
+    wpressarc --from-tar < wordpress.tar > wordpress.wpress
 
-```
-wpressarc --to-tar < wordpress.wpress > wordpress.tar
-```
+To convert a wpress archive to a tar archive:
 
-To extract a WordPress archive:
+    wpressarc --to-tar < wordpress.wpress > wordpress.tar
 
-```
-wpressarc --to-tar < wordpress.wpress | tar -xvf -
-```
+To extract a wpress archive:
 
-To list the contents of a WordPress archive:
+    wpressarc --to-tar < wordpress.wpress | tar -xvf -
 
-```
-wpressarc --to-tar < wordpress.wpress | tar -tvf -
-```
+To list the contents of a wpress archive:
+
+    wpressarc --to-tar < wordpress.wpress | tar -tvf -
 
 ## Notes
 
-Converting a WordPress archive to a tar archive is lossy, because the
-WordPress archive format does not store file permission, ownership,
+Converting a wpress archive to a tar archive is lossy, because the
+wpress archive format does not store file permission, ownership,
 and other metadata, and it also does not store any metadata for the
 directories (in fact, it does not even store the directory entries).
 
