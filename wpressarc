@@ -179,9 +179,14 @@ if __name__ == "__main__":
                 break
             tarinfo = entry.to_tarinfo()
             tar.addfile(tarinfo, fileobj=archive.file)
-    else:
+    elif sys.argv[1] == "--from-tar":
         tar = tarfile.open(fileobj=stdin, mode="r|")
         archive = Archive(stdout)
         for tarinfo in tar:
             header = EntryHeader.from_tarinfo(tarinfo)
             archive.write(header, tar.extractfile(tarinfo))
+    elif sys.argv[1] == "--help":
+        print(__doc__.strip())
+    else:
+        print(__doc__.strip(), file=sys.stderr)
+        sys.exit(1)
