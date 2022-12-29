@@ -98,7 +98,7 @@ class EntryHeader:
     def to_tarinfo(self) -> tarfile.TarInfo:
         """Convert the header to a TarInfo object."""
         tarinfo = tarfile.TarInfo()
-        tarinfo.name = os.path.join(self.path, self.name)
+        tarinfo.name = os.path.join(self.path, self.name) if self.path != "." else self.name
         tarinfo.size = self.size
         tarinfo.mtime = self.mtime
         tarinfo.type = tarfile.REGTYPE
@@ -161,6 +161,24 @@ class Archive:
             self.file.write(chunk)
             size -= len(chunk)
 
+def to_tar(stdin: io.IOBase, stdout: io.IOBase):
+    """Convert a WordPress archive to a tar archive."""
+    with tarfile.open(fileobj=stdout, mode="w|") as tar:
+        archive = Archive(stdin)
+        while True:
+            entry = archive.next_entry()
+            if entry is None:
+                break
+            tarinfo = entry.to_tarinfo()
+            tar.addfile(tarinfo, fileobj=archive.file)
+
+def from_tar(stdin: io.IOBase, stdout: io.IOBase):
+    """Convert a tar archive to a WordPress archive."""
+    with tarfile.open(fileobj=stdin, mode="r|") as tar:
+        archive = Archive(stdout)
+        for tarinfo in tar:
+            header = EntryHeader.from_tarinfo(tarinfo)
+            archive.write(header, tar.extractfile(tarinfo))
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -170,23 +188,12 @@ if __name__ == "__main__":
     stdin = os.fdopen(sys.stdin.fileno(), "rb")
     stdout = os.fdopen(sys.stdout.fileno(), "wb")
 
-    if sys.argv[1] == "--to-tar":
-        tar = tarfile.open(fileobj=stdout, mode="w|")
-        archive = Archive(stdin)
-        while True:
-            entry = archive.next_entry()
-            if entry is None:
-                break
-            tarinfo = entry.to_tarinfo()
-            tar.addfile(tarinfo, fileobj=archive.file)
-    elif sys.argv[1] == "--from-tar":
-        tar = tarfile.open(fileobj=stdin, mode="r|")
-        archive = Archive(stdout)
-        for tarinfo in tar:
-            header = EntryHeader.from_tarinfo(tarinfo)
-            archive.write(header, tar.extractfile(tarinfo))
-    elif sys.argv[1] == "--help":
+    if sys.argv[1] == "--help":
         print(__doc__.strip())
+    if sys.argv[1] == "--to-tar":
+        to_tar(stdin, stdout)
+    elif sys.argv[1] == "--from-tar":
+        from_tar(stdin, stdout)
     else:
         print(__doc__.strip(), file=sys.stderr)
         sys.exit(1)
