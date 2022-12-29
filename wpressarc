@@ -192,8 +192,10 @@ if __name__ == "__main__":
         print(__doc__.strip())
     if sys.argv[1] == "--to-tar":
         to_tar(stdin, stdout)
+        stdout.flush()
     elif sys.argv[1] == "--from-tar":
         from_tar(stdin, stdout)
+        stdout.flush()
     else:
         print(__doc__.strip(), file=sys.stderr)
         sys.exit(1)
