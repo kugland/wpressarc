@@ -62,6 +62,7 @@ import os
 import io
 import tarfile
 
+
 class EntryHeader:
     """Header for a single entry in a WordPress archive."""
 
@@ -81,11 +82,11 @@ class EntryHeader:
         """Write a field to the archive."""
         if type(value) is int:
             value = str(value)
-        value = value.encode('utf-8')
+        value = value.encode("utf-8")
         if len(value) > field_size:
-            raise ValueError('Field value too long')
+            raise ValueError("Field value too long")
         file.write(value)
-        file.write(b'\0' * (field_size - len(value)))
+        file.write(b"\0" * (field_size - len(value)))
 
     def write_header(self, file: io.IOBase):
         """Write the header to the archive."""
@@ -104,33 +105,35 @@ class EntryHeader:
         tarinfo.mode = 0o644
         tarinfo.uid = 0
         tarinfo.gid = 0
-        tarinfo.uname = 'root'
-        tarinfo.gname = 'root'
+        tarinfo.uname = "root"
+        tarinfo.gname = "root"
         return tarinfo
 
     @staticmethod
     def from_tarinfo(tarinfo: tarfile.TarInfo):
         """Convert a TarInfo object to a header."""
         path = os.path.dirname(tarinfo.name)
-        if path == '':
-            path = '.'
+        if path == "":
+            path = "."
         name = os.path.basename(tarinfo.name)
         return EntryHeader(path, name, tarinfo.size, tarinfo.mtime)
 
     @staticmethod
     def read_header(file: io.IOBase) -> EntryHeader | None:
         """Read a header from the archive."""
-        name = file.read(255).decode('utf-8').rstrip('\0')
-        size = file.read(14).decode('ascii').rstrip('\0')
-        mtime = file.read(12).decode('ascii').rstrip('\0')
-        path = file.read(4096).decode('utf-8').rstrip('\0')
-        if name == '' and size == '' and mtime == '' and path == '':
+        name = file.read(255).decode("utf-8").rstrip("\0")
+        size = file.read(14).decode("ascii").rstrip("\0")
+        mtime = file.read(12).decode("ascii").rstrip("\0")
+        path = file.read(4096).decode("utf-8").rstrip("\0")
+        if name == "" and size == "" and mtime == "" and path == "":
             return None
         else:
             return EntryHeader(path, name, int(size), int(mtime))
 
+
 class Archive:
     """Reader for a WordPress archive."""
+
     file: io.IOBase
 
     def __init__(self, file: io.IOBase):
@@ -158,16 +161,17 @@ class Archive:
             self.file.write(chunk)
             size -= len(chunk)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     if len(sys.argv) != 2:
         print(__doc__.strip(), file=sys.stderr)
         sys.exit(1)
 
-    stdin = os.fdopen(sys.stdin.fileno(), 'rb')
-    stdout = os.fdopen(sys.stdout.fileno(), 'wb')
+    stdin = os.fdopen(sys.stdin.fileno(), "rb")
+    stdout = os.fdopen(sys.stdout.fileno(), "wb")
 
-    if sys.argv[1] == '--to-tar':
-        tar = tarfile.open(fileobj=stdout, mode='w|')
+    if sys.argv[1] == "--to-tar":
+        tar = tarfile.open(fileobj=stdout, mode="w|")
         archive = Archive(stdin)
         while True:
             entry = archive.next_entry()
@@ -176,7 +180,7 @@ if __name__ == '__main__':
             tarinfo = entry.to_tarinfo()
             tar.addfile(tarinfo, fileobj=archive.file)
     else:
-        tar = tarfile.open(fileobj=stdin, mode='r|')
+        tar = tarfile.open(fileobj=stdin, mode="r|")
         archive = Archive(stdout)
         for tarinfo in tar:
             header = EntryHeader.from_tarinfo(tarinfo)
