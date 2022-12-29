@@ -112,15 +112,6 @@ class EntryHeader:
         return tarinfo
 
     @staticmethod
-    def from_tarinfo(tarinfo: tarfile.TarInfo):
-        """Convert a TarInfo object to a header."""
-        path = os.path.dirname(tarinfo.name)
-        if path == "":
-            path = "."
-        name = os.path.basename(tarinfo.name)
-        return EntryHeader(path, name, tarinfo.size, tarinfo.mtime)
-
-    @staticmethod
     def read_header(file: io.IOBase) -> EntryHeader | None:
         """Read a header from the archive."""
         name = file.read(255).decode("utf-8").rstrip("\0")
@@ -131,6 +122,15 @@ class EntryHeader:
             return None
         else:
             return EntryHeader(path, name, int(size), int(mtime))
+
+    @staticmethod
+    def from_tarinfo(tarinfo: tarfile.TarInfo):
+        """Convert a TarInfo object to a header."""
+        path = os.path.dirname(tarinfo.name)
+        if path == "":
+            path = "."
+        name = os.path.basename(tarinfo.name)
+        return EntryHeader(path, name, tarinfo.size, tarinfo.mtime)
 
 
 class Archive:
@@ -146,22 +146,18 @@ class Archive:
         """Read the next entry header from the archive."""
         return EntryHeader.read_header(self.file)
 
-    def copy(self, entry: EntryHeader, output: io.IOBase):
-        """Copy the contents of an entry to a file."""
-        size = entry.size
+    @staticmethod
+    def _copy(input: io.IOBase, output: io.IOBase, size: int):
+        """Copy the contents of a file to another file."""
         while size > 0:
-            chunk = self.file.read(min(size, 65536))
+            chunk = input.read(min(size, 65536))
             output.write(chunk)
             size -= len(chunk)
 
     def write(self, entry: EntryHeader, input: io.IOBase):
         """Write a file to the archive."""
         entry.write_header(self.file)
-        size = entry.size
-        while size > 0:
-            chunk = input.read(min(size, 65536))
-            self.file.write(chunk)
-            size -= len(chunk)
+        self._copy(input, self.file, entry.size)
 
 
 def to_tar(stdin: io.IOBase, stdout: io.IOBase):
@@ -193,14 +189,16 @@ if __name__ == "__main__":
     stdin = os.fdopen(sys.stdin.fileno(), "rb")
     stdout = os.fdopen(sys.stdout.fileno(), "wb")
 
-    if sys.argv[1] == "--help":
-        print(__doc__.strip())
-    if sys.argv[1] == "--to-tar":
-        to_tar(stdin, stdout)
-        stdout.flush()
-    elif sys.argv[1] == "--from-tar":
-        from_tar(stdin, stdout)
-        stdout.flush()
-    else:
-        print(__doc__.strip(), file=sys.stderr)
-        sys.exit(1)
+    try:
+        if sys.argv[1] == "--help":
+            print(__doc__.strip())
+        if sys.argv[1] == "--to-tar":
+            to_tar(stdin, stdout)
+        elif sys.argv[1] == "--from-tar":
+            from_tar(stdin, stdout)
+        else:
+            print(__doc__.strip(), file=sys.stderr)
+            sys.exit(1)
+    finally:
+        stdin.close()
+        stdout.close()
