@@ -98,7 +98,9 @@ class EntryHeader:
     def to_tarinfo(self) -> tarfile.TarInfo:
         """Convert the header to a TarInfo object."""
         tarinfo = tarfile.TarInfo()
-        tarinfo.name = os.path.join(self.path, self.name) if self.path != "." else self.name
+        tarinfo.name = (
+            os.path.join(self.path, self.name) if self.path != "." else self.name
+        )
         tarinfo.size = self.size
         tarinfo.mtime = self.mtime
         tarinfo.type = tarfile.REGTYPE
@@ -161,6 +163,7 @@ class Archive:
             self.file.write(chunk)
             size -= len(chunk)
 
+
 def to_tar(stdin: io.IOBase, stdout: io.IOBase):
     """Convert a WordPress archive to a tar archive."""
     with tarfile.open(fileobj=stdout, mode="w|") as tar:
@@ -172,6 +175,7 @@ def to_tar(stdin: io.IOBase, stdout: io.IOBase):
             tarinfo = entry.to_tarinfo()
             tar.addfile(tarinfo, fileobj=archive.file)
 
+
 def from_tar(stdin: io.IOBase, stdout: io.IOBase):
     """Convert a tar archive to a WordPress archive."""
     with tarfile.open(fileobj=stdin, mode="r|") as tar:
@@ -179,6 +183,7 @@ def from_tar(stdin: io.IOBase, stdout: io.IOBase):
         for tarinfo in tar:
             header = EntryHeader.from_tarinfo(tarinfo)
             archive.write(header, tar.extractfile(tarinfo))
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
