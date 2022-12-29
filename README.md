@@ -3,7 +3,7 @@
 ## Usage:
 `wpressarc --from-tar|--to-tar`
 
-The WordPress archive format is a simple format for storing files in a directory structure. It is used by the All-in-One WP Migration plugin.
+The WordPress archive format is a simple format for storing files in a directory structure. It is used by the [All-in-One WP Migration plugin](https://wordpress.org/plugins/all-in-one-wp-migration/).
 
 This script converts between the WordPress archive format and the tar archive format. It is intended to be used as a filter, so it reads from standard input and writes to standard output.
 
