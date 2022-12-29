@@ -141,10 +141,6 @@ class Archive:
         """Read the next entry header from the archive."""
         return EntryHeader.read_header(self.file)
 
-    def skip(self, entry: EntryHeader):
-        """Skip the contents of an entry."""
-        self.file.seek(entry.size, os.SEEK_CUR)
-
     def copy(self, entry: EntryHeader, output: io.IOBase):
         """Copy the contents of an entry to a file."""
         size = entry.size
