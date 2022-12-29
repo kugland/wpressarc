@@ -1,0 +1,187 @@
+#!/usr/bin/env python3
+
+# MIT License
+
+# Copyright (c) 2022 André Kugland
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+"""
+wpressarc - Convert ai1wm archives to and from tar archives
+
+Usage: wpressarc --from-tar|--to-tar
+
+The WordPress archive format is a simple format for storing files in a
+directory structure. It is used by the All-in-One WP Migration plugin.
+
+This script converts between the WordPress archive format and the tar
+archive format. It is intended to be used as a filter, so it reads from
+standard input and writes to standard output.
+
+For example, to convert a WordPress archive to a tar archive:
+
+    wpressarc --from-tar < wordpress.tar > wordpress.wpress
+
+To convert a tar archive to a WordPress archive:
+
+    wpressarc --to-tar < wordpress.wpress > wordpress.tar
+
+To extract a WordPress archive:
+
+    wpressarc --from-tar < wordpress.tar | tar -xvf -
+
+To list the contents of a WordPress archive:
+
+    wpressarc --to-tar < wordpress.wpress | tar -tvf -
+
+Converting a WordPress archive to a tar archive is lossy, because the
+WordPress archive format does not store file permission, ownership,
+and other metadata, and it also does not store any metadata for the
+directories (in fact, it does not even store the directory entries).
+"""
+
+from __future__ import annotations
+import sys
+import os
+import io
+import tarfile
+
+class EntryHeader:
+    """Header for a single entry in a WordPress archive."""
+
+    path: str
+    name: str
+    size: int
+    mtime: int
+
+    def __init__(self, path: str, name: str, size: int, mtime: int):
+        """Create a new entry header."""
+        self.path = path
+        self.name = name
+        self.size = size
+        self.mtime = mtime
+
+    def _write_field(self, file: io.IOBase, field_size: int, value: str | int):
+        """Write a field to the archive."""
+        if type(value) is int:
+            value = str(value)
+        value = value.encode('utf-8')
+        if len(value) > field_size:
+            raise ValueError('Field value too long')
+        file.write(value)
+        file.write(b'\0' * (field_size - len(value)))
+
+    def write_header(self, file: io.IOBase):
+        """Write the header to the archive."""
+        self._write_field(file, 255, self.name)
+        self._write_field(file, 14, self.size)
+        self._write_field(file, 12, self.mtime)
+        self._write_field(file, 4096, self.path)
+
+    def to_tarinfo(self) -> tarfile.TarInfo:
+        """Convert the header to a TarInfo object."""
+        tarinfo = tarfile.TarInfo()
+        tarinfo.name = os.path.join(self.path, self.name)
+        tarinfo.size = self.size
+        tarinfo.mtime = self.mtime
+        tarinfo.type = tarfile.REGTYPE
+        tarinfo.mode = 0o644
+        tarinfo.uid = 0
+        tarinfo.gid = 0
+        tarinfo.uname = 'root'
+        tarinfo.gname = 'root'
+        return tarinfo
+
+    @staticmethod
+    def from_tarinfo(tarinfo: tarfile.TarInfo):
+        """Convert a TarInfo object to a header."""
+        path = os.path.dirname(tarinfo.name)
+        if path == '':
+            path = '.'
+        name = os.path.basename(tarinfo.name)
+        return EntryHeader(path, name, tarinfo.size, tarinfo.mtime)
+
+    @staticmethod
+    def read_header(file: io.IOBase) -> EntryHeader | None:
+        """Read a header from the archive."""
+        name = file.read(255).decode('utf-8').rstrip('\0')
+        size = file.read(14).decode('ascii').rstrip('\0')
+        mtime = file.read(12).decode('ascii').rstrip('\0')
+        path = file.read(4096).decode('utf-8').rstrip('\0')
+        if name == '' and size == '' and mtime == '' and path == '':
+            return None
+        else:
+            return EntryHeader(path, name, int(size), int(mtime))
+
+class Archive:
+    """Reader for a WordPress archive."""
+    file: io.IOBase
+
+    def __init__(self, file: io.IOBase):
+        """Create a new archive reader."""
+        self.file = file
+
+    def next_entry(self) -> EntryHeader | None:
+        """Read the next entry header from the archive."""
+        return EntryHeader.read_header(self.file)
+
+    def skip(self, entry: EntryHeader):
+        """Skip the contents of an entry."""
+        self.file.seek(entry.size, os.SEEK_CUR)
+
+    def copy(self, entry: EntryHeader, output: io.IOBase):
+        """Copy the contents of an entry to a file."""
+        size = entry.size
+        while size > 0:
+            chunk = self.file.read(min(size, 65536))
+            output.write(chunk)
+            size -= len(chunk)
+
+    def write(self, entry: EntryHeader, input: io.IOBase):
+        """Write a file to the archive."""
+        entry.write_header(self.file)
+        size = entry.size
+        while size > 0:
+            chunk = input.read(min(size, 65536))
+            self.file.write(chunk)
+            size -= len(chunk)
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print(.format(sys.argv[0]), file=sys.stderr)
+        sys.exit(1)
+
+    stdin = os.fdopen(sys.stdin.fileno(), 'rb')
+    stdout = os.fdopen(sys.stdout.fileno(), 'wb')
+
+    if sys.argv[1] == '--to-tar':
+        tar = tarfile.open(fileobj=stdout, mode='w|')
+        archive = Archive(stdin)
+        while True:
+            entry = archive.next_entry()
+            if entry is None:
+                break
+            tarinfo = entry.to_tarinfo()
+            tar.addfile(tarinfo, fileobj=archive.file)
+    else:
+        tar = tarfile.open(fileobj=stdin, mode='r|')
+        archive = Archive(stdout)
+        for tarinfo in tar:
+            header = EntryHeader.from_tarinfo(tarinfo)
+            archive.write(header, tar.extractfile(tarinfo))
