@@ -42,7 +42,7 @@ One of the following options must be specified:
 When converting from wpress to tar, the following options are also
 available:
 
-  -m | --mode MODE      File mode for tar archive entries [default: 644]
+  -m | --mode MODE      File mode for tar archive entries [default: 0644]
   -u | --uid UID        User ID for tar archive entries [default: 0]
   -g | --gid GID        Group ID for tar archive entries [default: 0]
   -U | --owner OWNER    User name for tar archive entries [default: root]
@@ -73,11 +73,11 @@ wpress archive format does not store file permission, ownership, and
 other metadata, and it also does not store any metadata for the
 directories (in fact, it does not even store the directory entries).
 
-When the `FILE` arguments are specified, they are interpreted as
-patterns to match against the file names in the archive. If stdin
-is seekable, *i.e.* if it is redirected directly from a file, then
-the unmatched entries will be skipped entirely, which will be much
-faster than reading and discarding the entries.
+When the FILE arguments are specified, they are interpreted as patterns
+to match against the file names in the archive. If stdin is seekable,
+i.e. if it is redirected directly from a file, then the unmatched
+entries will be skipped entirely, which will be much faster than reading
+and discarding the entries.
 
 This script is licensed under the MIT license. See the LICENSE file for
 details.
