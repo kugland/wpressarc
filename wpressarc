@@ -177,12 +177,16 @@ class Archive:
         return EntryHeader.read_header(self.file)
 
     @staticmethod
-    def _copy(input: IO[bytes], output: IO[bytes], size: int):
+    def _copy(input: IO[bytes], output: IO[bytes] | None, size: int):
         """Copy the contents of a file to another file."""
-        while size > 0:
-            chunk = input.read(min(size, 65536))
-            output.write(chunk)
-            size -= len(chunk)
+        if output is None and input.seekable():
+            input.seek(size, os.SEEK_CUR)
+        else:
+            while size > 0:
+                chunk = input.read(min(size, 65536))
+                if output is not None:
+                    output.write(chunk)
+                size -= len(chunk)
 
     def write(self, entry: EntryHeader, input: IO[bytes]):
         """Write a file to the archive."""
@@ -191,13 +195,7 @@ class Archive:
 
     def skip(self, entry: EntryHeader):
         """Skip a file in the archive."""
-        if self.seekable:
-            self.file.seek(entry.size, os.SEEK_CUR)
-        else:
-            size = entry.size
-            while size > 0:
-                chunk = self.file.read(min(size, 65536))
-                size -= len(chunk)
+        self._copy(self.file, None, entry.size)
 
 
 def match_fnames(fnames: list[str], path: str, name: str) -> bool:
