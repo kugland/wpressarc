@@ -42,11 +42,11 @@ One of the following options must be specified:
 When converting from wpress to tar, the following options are also
 available:
 
-  -m | --mode        File mode for tar archive entries [default: 644]
-  -u | --uid         User ID for tar archive entries [default: 0]
-  -g | --gid         Group ID for tar archive entries [default: 0]
-  -U | --owner       User name for tar archive entries [default: root]
-  -G | --group       Group name for tar archive entries [default: root]
+  -m | --mode       File mode for tar archive entries [default: 644]
+  -u | --uid        User ID for tar archive entries [default: 0]
+  -g | --gid        Group ID for tar archive entries [default: 0]
+  -U | --owner      User name for tar archive entries [default: root]
+  -G | --group      Group name for tar archive entries [default: root]
 
 For example, to convert a tar archive to a wpress archive:
 
