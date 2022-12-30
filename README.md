@@ -60,7 +60,7 @@ To list the contents of a wpress archive:
 
 To extract only files matching a pattern from an archive (wpress or tar):
 
-    wpressarc --to-tar < wordpress.wpress '*.sql' | tar -xvf -
+    wpressarc --to-tar '*.sql' < wordpress.wpress | tar -xvf -
 
 ## Notes
 
