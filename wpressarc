@@ -76,8 +76,9 @@ details.
 from __future__ import annotations
 import sys
 import os
-import io
 import tarfile
+from dataclasses import dataclass
+from typing import IO
 
 
 class EntryHeader:
@@ -95,24 +96,22 @@ class EntryHeader:
         self.size = size
         self.mtime = mtime
 
-    def _write_field(self, file: io.IOBase, field_size: int, value: str | int):
+    def _write_field(self, file: IO[bytes], field_size: int, value: str | int):
         """Write a field to the archive."""
-        if type(value) is int:
-            value = str(value)
-        value = value.encode("utf-8")
-        if len(value) > field_size:
+        value_bytes = str(value).encode("utf-8")
+        if len(value_bytes) > field_size:
             raise ValueError("Field value too long")
-        file.write(value)
-        file.write(b"\0" * (field_size - len(value)))
+        file.write(value_bytes)
+        file.write(b"\0" * (field_size - len(value_bytes)))
 
-    def write_header(self, file: io.IOBase):
+    def write_header(self, file: IO[bytes]):
         """Write the header to the archive."""
         self._write_field(file, 255, self.name)
         self._write_field(file, 14, self.size)
         self._write_field(file, 12, self.mtime)
         self._write_field(file, 4096, self.path)
 
-    def to_tarinfo(self, args: object) -> tarfile.TarInfo:
+    def to_tarinfo(self, args: argparse.Namespace) -> tarfile.TarInfo:
         """Convert the header to a TarInfo object."""
         tarinfo = tarfile.TarInfo()
         tarinfo.name = (
@@ -129,7 +128,7 @@ class EntryHeader:
         return tarinfo
 
     @staticmethod
-    def read_header(file: io.IOBase) -> EntryHeader | None:
+    def read_header(file: IO[bytes]) -> EntryHeader | None:
         """Read a header from the archive."""
         name = file.read(255).decode("utf-8").rstrip("\0")
         size = file.read(14).decode("ascii").rstrip("\0")
@@ -155,9 +154,9 @@ class EntryHeader:
 class Archive:
     """Reader for a WordPress archive."""
 
-    file: io.IOBase
+    file: IO[bytes]
 
-    def __init__(self, file: io.IOBase):
+    def __init__(self, file: IO[bytes]):
         """Create a new archive reader."""
         self.file = file
 
@@ -166,20 +165,20 @@ class Archive:
         return EntryHeader.read_header(self.file)
 
     @staticmethod
-    def _copy(input: io.IOBase, output: io.IOBase, size: int):
+    def _copy(input: IO[bytes], output: IO[bytes], size: int):
         """Copy the contents of a file to another file."""
         while size > 0:
             chunk = input.read(min(size, 65536))
             output.write(chunk)
             size -= len(chunk)
 
-    def write(self, entry: EntryHeader, input: io.IOBase):
+    def write(self, entry: EntryHeader, input: IO[bytes]):
         """Write a file to the archive."""
         entry.write_header(self.file)
         self._copy(input, self.file, entry.size)
 
 
-def to_tar(stdin: io.IOBase, stdout: io.IOBase, args: object):
+def to_tar(stdin: IO[bytes], stdout: IO[bytes], args: argparse.Namespace):
     """Convert a WordPress archive to a tar archive."""
     with tarfile.open(fileobj=stdout, mode="w|") as tar:
         archive = Archive(stdin)
@@ -191,14 +190,16 @@ def to_tar(stdin: io.IOBase, stdout: io.IOBase, args: object):
             tar.addfile(tarinfo, fileobj=archive.file)
 
 
-def from_tar(stdin: io.IOBase, stdout: io.IOBase):
+def from_tar(stdin: IO[bytes], stdout: IO[bytes]):
     """Convert a tar archive to a WordPress archive."""
     with tarfile.open(fileobj=stdin, mode="r|") as tar:
         archive = Archive(stdout)
         for tarinfo in tar:
             header = EntryHeader.from_tarinfo(tarinfo)
             if header is not None:  # Skip directories, etc.
-                archive.write(header, tar.extractfile(tarinfo))
+                file = tar.extractfile(tarinfo)
+                if file is not None:
+                    archive.write(header, file)
 
 
 def show_help(error: bool = False):
