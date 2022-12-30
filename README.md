@@ -15,7 +15,7 @@ directory structure, used by the
 ## Usage
 
 ```
-wpressarc --from-tar | --to-tar [OPTIONS]
+wpressarc --from-tar | --to-tar [OPTIONS] [FILE ...]
 ```
 
 ## Options to select conversion direction
@@ -58,12 +58,22 @@ To list the contents of a wpress archive:
 
     wpressarc --to-tar < wordpress.wpress | tar -tvf -
 
+To extract only files matching a pattern from an archive (wpress or tar):
+
+    wpressarc --to-tar < wordpress.wpress '*.sql' | tar -xvf -
+
 ## Notes
 
 Converting a wpress archive to a tar archive is lossy, because the
 wpress archive format does not store file permission, ownership,
 and other metadata, and it also does not store any metadata for the
 directories (in fact, it does not even store the directory entries).
+
+When the `FILE` arguments are specified, they are interpreted as
+patterns to match against the file names in the archive. If stdin
+is seekable, *i.e.* if it is redirected directly from a file, then
+the unmatched entries will be skipped entirely, which will be much
+faster than reading and discarding the entries.
 
 ## License
 
