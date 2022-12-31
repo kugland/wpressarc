@@ -10,7 +10,7 @@ from importlib.machinery import SourceFileLoader
 
 spec = spec_from_loader("wpressarc", SourceFileLoader("wpressarc", "./wpressarc"))
 if spec is None:
-    raise ImportError("Unable to load wpressarcy")
+    raise ImportError("Unable to load wpressarc")
 wpressarc = module_from_spec(spec)
 if spec.loader is None:
     raise ImportError("Unable to load wpressarc")
