@@ -19,8 +19,8 @@ spec.loader.exec_module(wpressarc)
 EntryHeader = wpressarc.EntryHeader
 Archive = wpressarc.Archive
 
-class TestEntryHeader(unittest.TestCase):
 
+class TestEntryHeader(unittest.TestCase):
     def test_write_read(self):
         """Test writing and reading a header."""
         header = EntryHeader("path", "name", 123, 456)
@@ -29,7 +29,10 @@ class TestEntryHeader(unittest.TestCase):
         buf.seek(0)
         sha256 = hashlib.sha256()
         sha256.update(buf.read())
-        self.assertEqual(sha256.hexdigest(), 'a2f29ff31bc22f8ab56c032dda5f5dbac253929ab903cfddd5e632861a59a15e')
+        self.assertEqual(
+            sha256.hexdigest(),
+            "a2f29ff31bc22f8ab56c032dda5f5dbac253929ab903cfddd5e632861a59a15e",
+        )
         buf.seek(0)
         header2 = EntryHeader.read_header(buf)
         self.assertIsNotNone(header2)
@@ -90,7 +93,11 @@ class TestEntryHeader(unittest.TestCase):
     def test_to_tarinfo(self):
         """Test converting a header to a TarInfo object."""
         header = EntryHeader("path", "name", 123, 456)
-        tarinfo = header.to_tarinfo(argparse.Namespace(mode=0o755, uid=234, gid=567, owner="owner", group="group"))
+        tarinfo = header.to_tarinfo(
+            argparse.Namespace(
+                mode=0o755, uid=234, gid=567, owner="owner", group="group"
+            )
+        )
         self.assertEqual(tarinfo.name, "path/name")
         self.assertEqual(tarinfo.size, 123)
         self.assertEqual(tarinfo.mtime, 456)
@@ -103,7 +110,6 @@ class TestEntryHeader(unittest.TestCase):
 
 
 class TestArchive(unittest.TestCase):
-
     def test_read_write(self):
         """Test reading a WordPress archive."""
         file = io.BytesIO()
@@ -125,5 +131,5 @@ class TestArchive(unittest.TestCase):
         self.assertIsNone(entry2)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

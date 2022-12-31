@@ -14,6 +14,7 @@ test "$files" = "database.sql package.json uploads/test.jpg"
 files="$(./wpressarc -t '*.sql' '*.json' < test.wpress | tar -t | sort | xargs echo)"
 test "$files" = "database.sql package.json"
 
+# shellcheck disable=SC2002
 files="$(cat test.wpress | ./wpressarc -t '*.sql' '*.json' | tar -t | sort | xargs echo)"
 test "$files" = "database.sql package.json"
 
