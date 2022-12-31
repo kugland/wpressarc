@@ -17,9 +17,9 @@ test "$files" = "database.sql package.json"
 files="$(cat test.wpress | ./wpressarc -t '*.sql' '*.json' | tar -t | sort | xargs echo)"
 test "$files" = "database.sql package.json"
 
-files="$(./wpressarc -t --mode=000 '*.sql' < test.wpress | tar -tv | grep -- "----------")"
-files="$(./wpressarc -t --owner=test --group=test '*.sql' < test.wpress | tar -tv | grep -- "test/test")"
-files="$(./wpressarc -t --uid=1234 --gid=5678 '*.sql' < test.wpress | tar -tv --numeric-owner | grep -- "1234/5678")"
+./wpressarc -t --mode=000 '*.sql' < test.wpress | tar -tv | grep -- "----------"
+./wpressarc -t --owner=test --group=test '*.sql' < test.wpress | tar -tv | grep -- "test/test"
+./wpressarc -t --uid=1234 --gid=5678 '*.sql' < test.wpress | tar -tv --numeric-owner | grep -- "1234/5678"
 
 ./wpressarc -t < test.wpress | ./wpressarc -f > test2.wpress
 cmp test.wpress test2.wpress
