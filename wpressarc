@@ -124,9 +124,12 @@ class EntryHeader:
     def to_tarinfo(self, args: argparse.Namespace) -> tarfile.TarInfo:
         """Convert the header to a TarInfo object."""
         tarinfo = tarfile.TarInfo()
-        tarinfo.name = (
-            os.path.join(self.path, self.name) if self.path != "." else self.name
-        )
+        name = os.path.join(self.path, self.name)
+        if name.startswith("./"):
+            name = name[2:]
+        if name.startswith("/"):
+            name = name[1:]
+        tarinfo.name = name
         tarinfo.size = self.size
         tarinfo.mtime = self.mtime
         tarinfo.type = tarfile.REGTYPE
@@ -155,8 +158,9 @@ class EntryHeader:
         if tarinfo.type != tarfile.REGTYPE:  # Skip directories, etc.
             return None
         path = os.path.dirname(tarinfo.name)
-        if path == "":
-            path = "."
+        if path.startswith("./"):
+            path = path[2:]
+        path = "." if path == "" else path
         name = os.path.basename(tarinfo.name)
         return EntryHeader(path, name, tarinfo.size, tarinfo.mtime)
 
@@ -165,12 +169,10 @@ class Archive:
     """Reader for a WordPress archive."""
 
     file: IO[bytes]
-    seekable: bool
 
     def __init__(self, file: IO[bytes]):
         """Create a new archive reader."""
         self.file = file
-        self.seekable = file.seekable()
 
     def next_entry(self) -> EntryHeader | None:
         """Read the next entry header from the archive."""
@@ -184,6 +186,8 @@ class Archive:
         else:
             while size > 0:
                 chunk = input.read(min(size, 65536))
+                if len(chunk) == 0:
+                    raise EOFError("Unexpected end of file")
                 if output is not None:
                     output.write(chunk)
                 size -= len(chunk)
@@ -197,14 +201,18 @@ class Archive:
         """Skip a file in the archive."""
         self._copy(self.file, None, entry.size)
 
+    def finalize(self):
+        """Finalize the archive."""
+        self.file.write(b"\0" * (255 + 14 + 12 + 4096))
+        self.file.flush()
+
 
 def match_fnames(fnames: list[str], path: str, name: str) -> bool:
     """Check if a file name matches any of the patterns."""
-    if not fnames: # No patterns, match everything
+    if not fnames:  # No patterns, match everything
         return True
-    for pattern in fnames: # Test each pattern
-        if fnmatch(os.path.join(path, name), pattern):
-            return True
+    if any(fnmatch(os.path.join(path, name), pattern) for pattern in fnames):
+        return True
     return False
 
 
@@ -235,6 +243,7 @@ def from_tar(stdin: IO[bytes], stdout: IO[bytes]):
                 file = tar.extractfile(tarinfo)
                 if file is not None:
                     archive.write(header, file)
+        archive.finalize()
 
 
 def show_help(error: bool = False):
