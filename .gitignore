@@ -1,0 +1,4 @@
+*.wpress
+__pycache__
+.*
+!.gitignore
