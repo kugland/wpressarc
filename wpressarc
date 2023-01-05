@@ -32,7 +32,7 @@ standard input and writes to standard output.
 The wpress archive format is a simple format for storing files in a
 directory structure, used by the All-in-One WP Migration plugin.
 
-Usage: wpressarc --from-tar | --to-tar [OPTIONS] [FILE ...]
+Usage: wpressarc --from-tar | --to-tar [OPTIONS] [FILE ...] < INPUT
 
 One of the following options must be specified:
 
