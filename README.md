@@ -15,7 +15,7 @@ directory structure, used by the
 ## Usage
 
 ```
-wpressarc --from-tar | --to-tar [OPTIONS] [FILE ...]
+wpressarc --from-tar | --to-tar [OPTIONS] [FILE ...] < INPUT
 ```
 
 ## Options to select conversion direction
