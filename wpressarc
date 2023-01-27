@@ -43,6 +43,7 @@ When converting from wpress to tar, the following options are also
 available:
 
   -m | --mode MODE      File mode for tar archive entries [default: 0644]
+  -d | --dmode MODE     Directory mode for tar archive entries [default: 0755]
   -u | --uid UID        User ID for tar archive entries [default: 0]
   -g | --gid GID        Group ID for tar archive entries [default: 0]
   -U | --owner OWNER    User name for tar archive entries [default: root]
@@ -220,6 +221,7 @@ def to_tar(stdin: IO[bytes], stdout: IO[bytes], args: argparse.Namespace):
     """Convert a WordPress archive to a tar archive."""
     with tarfile.open(fileobj=stdout, mode=("w" if stdout.seekable() else "w|")) as tar:
         archive = Archive(stdin)
+        added_directories: set[str] = set()
         while True:
             entry = archive.next_entry()
             if entry is None:
@@ -228,6 +230,18 @@ def to_tar(stdin: IO[bytes], stdout: IO[bytes], args: argparse.Namespace):
                 archive.skip(entry)
                 continue
             tarinfo = entry.to_tarinfo(args)
+            parent = os.path.dirname(tarinfo.name) + "/"
+            if parent not in ["/", "./"] and parent not in added_directories:
+                parent_tarinfo = tarfile.TarInfo()
+                parent_tarinfo.name = parent
+                parent_tarinfo.type = tarfile.DIRTYPE
+                parent_tarinfo.mode = args.dmode
+                parent_tarinfo.uid = args.uid
+                parent_tarinfo.gid = args.gid
+                parent_tarinfo.uname = args.owner
+                parent_tarinfo.gname = args.group
+                tar.addfile(parent_tarinfo)
+                added_directories.add(parent)
             tar.addfile(tarinfo, fileobj=archive.file)
         tar.close()
 
@@ -264,6 +278,7 @@ if __name__ == "__main__":
     parser.add_argument("--owner", "-U")
     parser.add_argument("--group", "-G")
     parser.add_argument("--mode", "-m")
+    parser.add_argument("--dmode", "-d")
     parser.add_argument("--help", "-h", action="store_true")
     parser.add_argument("fnames", nargs="*")
 
@@ -284,7 +299,7 @@ if __name__ == "__main__":
             if [args.uid, args.gid, args.owner, args.group, args.mode].count(None) != 5:
                 parser.error(
                     "the following arguments are not allowed in combination with --from-tar:\n"
-                    "--uid, --gid, --owner, --group, --mode"
+                    "--uid, --gid, --owner, --group, --mode, --dmode"
                 )
             from_tar(stdin, stdout)
         elif args.to_tar:
@@ -292,10 +307,9 @@ if __name__ == "__main__":
             args.gid = args.gid or 0
             args.owner = args.owner or "root"
             args.group = args.group or "root"
-            if args.mode is None:
-                args.mode = 0o644
-            else:
-                args.mode = int(args.mode, 8) & 0o777  # No set[ug]id or sticky bits :-)
+            (args.mode, args.dmode) = (args.mode or "644", args.dmode or "755")
+            args.mode = int(args.mode, 8) & 0o777  # No set[ug]id or sticky bits :-)
+            args.dmode = int(args.dmode, 8) & 0o777
             to_tar(stdin, stdout, args)
         else:
             show_help(error=True)

@@ -35,6 +35,7 @@ When converting from wpress to tar, the following options are also available:
 | Option                    | Description                                          |
 |---------------------------|------------------------------------------------------|
 | `-m` \| `--mode` `MODE`   | File mode for tar archive entries [default: `0644`]  |
+| `-d` \| `--dmode` `MODE`  | Directory mode for tar archive entries [default: `0755`] |
 | `-u` \| `--uid` `UID`     | User ID for tar archive entries [default: `0`]       |
 | `-g` \| `--gid` `GID`     | Group ID for tar archive entries [default: `0`]      |
 | `-U` \| `--owner` `OWNER` | User name for tar archive entries [default: `root`]  |

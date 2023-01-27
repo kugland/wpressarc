@@ -9,7 +9,7 @@ sha256="$(sha256sum test.wpress | cut -d' ' -f1)"
 test "$sha256" = "bb5c01177cb5dd023d1d62cb836c5b9f220111dbf69265dd608ab6906e237f2e"
 
 files="$(./wpressarc -t < test.wpress | tar -t | sort | xargs echo)"
-test "$files" = "database.sql package.json uploads/test.jpg"
+test "$files" = "database.sql package.json uploads/ uploads/test.jpg"
 
 files="$(./wpressarc -t '*.sql' '*.json' < test.wpress | tar -t | sort | xargs echo)"
 test "$files" = "database.sql package.json"
