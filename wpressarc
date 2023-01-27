@@ -229,6 +229,7 @@ def to_tar(stdin: IO[bytes], stdout: IO[bytes], args: argparse.Namespace):
                 continue
             tarinfo = entry.to_tarinfo(args)
             tar.addfile(tarinfo, fileobj=archive.file)
+        tar.close()
 
 
 def from_tar(stdin: IO[bytes], stdout: IO[bytes]):
