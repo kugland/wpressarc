@@ -19,6 +19,7 @@ files="$(cat test.wpress | ./wpressarc -t '*.sql' '*.json' | tar -t | sort | xar
 test "$files" = "database.sql package.json"
 
 ./wpressarc -t --mode=000 '*.sql' < test.wpress | tar -tv | grep -- "----------"
+./wpressarc -t --dmode=000 < test.wpress | tar -tv | grep -- "d---------"
 ./wpressarc -t --owner=test --group=test '*.sql' < test.wpress | tar -tv | grep -- "test/test"
 ./wpressarc -t --uid=1234 --gid=5678 '*.sql' < test.wpress | tar -tv --numeric-owner | grep -- "1234/5678"
 
