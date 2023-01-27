@@ -20,7 +20,7 @@ test "$files" = "database.sql package.json"
 
 ./wpressarc -t --mode=000 '*.sql' < test.wpress | tar -tv | grep -F -- "----------"
 ./wpressarc -t --dmode=000 < test.wpress | tar -tv | grep -F -- "d---------"
-./wpressarc -t --owner=test --group=test '*.sql' < test.wpress | tar -tv | grep -F -- "test/test"
+./wpressarc -t --owner=owner --group=group '*.sql' < test.wpress | tar -tv | grep -F -- "owner/group"
 ./wpressarc -t --uid=1234 --gid=5678 '*.sql' < test.wpress | tar -tv --numeric-owner | grep -F -- "1234/5678"
 
 ./wpressarc -t < test.wpress | ./wpressarc -f > test2.wpress
