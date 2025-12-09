@@ -4,9 +4,9 @@ set -eux
 
 python3 ./test.py
 
-tar -C test_assets -c . | ./wpressarc -f > test.wpress
+tar -C test_assets --mtime=1980-01-01T00:00:00Z -c ./{database.sql,package.json,uploads/test.jpg} | ./wpressarc -f > test.wpress
 sha256="$(sha256sum test.wpress | cut -d' ' -f1)"
-test "$sha256" = "bb5c01177cb5dd023d1d62cb836c5b9f220111dbf69265dd608ab6906e237f2e"
+test "$sha256" = "dc4f6551d51f47a78998bb44bf2d69235ab36bdb60085f6110d89e1cb059c670"
 
 files="$(./wpressarc -t < test.wpress | tar -t | sort | xargs echo)"
 test "$files" = "database.sql package.json uploads/ uploads/test.jpg"
